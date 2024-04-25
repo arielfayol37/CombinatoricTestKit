@@ -6,5 +6,6 @@ is a Python-based tool designed to generate comprehensive test cases for combina
 - When you are done downloading python, open the command line and navivate to this folder.
 - Execute the following command: pip install -r requirements.txt
 - You are all set. Now go to combi_test.py and modify the test_function() method to your specification.
+- When you are done writing your function, save and execute the command: python combi_test.py
 
 Email me at arielfayol1@gmail.com if you need help

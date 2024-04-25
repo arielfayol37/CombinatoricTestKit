@@ -25,22 +25,22 @@ class Test:
 
         # Doing one step at a time (preferable, since it will be easier to debug):
         
-        and_a = And([x[0], x[1]]) # NOTE: the variable names do not matter. 
-        and_b = And([x[2], x[3]]) # if you want to specifiy a name for your gate, then pass it as an argument
-        not_b = Not([and_b])      # For example, the variabl z is a gate, with then name 'Z'
-        or_a = Or([not_b, and_a]) # NOTE: even though the NOT gate only has one input, it should still be passed using a list.
-        or_b = Or([and_b, x[4]])
-        z = And([or_a, or_b], name='Z')
+        and_12 = And([x[0], x[1]])
+        and_34 = And([x[2], x[3]])
+        not_and_34 = Not([and_34])
+        or_0 = Or([and_12, not_and_34])
+        or_1 = Or([and_34, x[4]])
+        final_output = And([or_0, or_1])
 
-        # NOTE: You can do everything in one line (shorter but harder to debug):
-        # z = And([Or([Not([And([x[2], x[3]])]), And([x[0], x[1]])]), Or([And([x[2], x[3]]), x[4]])])
+        # NOTE: You can do everything in one line (shorter but harder to debug)
 
+        self.get_result(final_output) # NOTE: the program expects final_output to be the variable name of your final output
         """
         ------- END OF USER INPUT
         """
         
 
-        self.get_result(z)
+        
 
     def draw_graph(self, directed_graph):
         G = directed_graph
@@ -69,6 +69,9 @@ class Test:
         GDG = graphviz.Digraph('Circuit Graph', filename='circuit.gv')
         z = output_node
         tree_list = [z]
+
+        GDG.edge(z.name, 'output')
+        DG.add_edge(z.name, 'output')
         z.build_tree(tree_list, DG, GDG)
 
         results_rows = []
