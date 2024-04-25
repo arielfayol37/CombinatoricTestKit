@@ -1,170 +1,46 @@
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
-# import graphviz
-
-class Gate:
-    def __init__(self, input, force_value=None, name=None):
-        self.name = name
-        self.input = input
-        self.force_value = force_value
-
-    def compute_node(self, row):
-        """
-        Recursively computes the output at each node by going bottom up.
-        Even though the calls are top down
-        """
-        if self.force_value != None:
-            return self.force_value
-        else:
-            node_ouputs = []
-            for node in self.input:
-                node_ouputs.append(node.compute_node(row))
-            return self.operation(*node_ouputs)
-    
-    def build_tree(self, tree_list, DG):
-        for node in self.input:
-            if node not in tree_list:
-                tree_list.append(node)
-            DG.add_edge(node, self)
-
-        for node in self.input:
-            
-            node.build_tree(tree_list, DG)
-    
-    def __str__(self) -> str:
-        return self.name
-    
-    def __repr__(self) -> str:
-        return self.name
-
-class And(Gate):
-    def __init__(self, input, force_value=None, name="AND"):
-        super().__init__(input=input, force_value=force_value, name=name)
-
-    def operation(self, *xs):
-        p = 1
-        for x in xs:
-            if x == 0:
-                p = 0
-                break
-        return min(1, p)
-
-class Nand(Gate):
-    def __init__(self, input, force_value=None, name="NAND"):
-        super().__init__(input=input, force_value=force_value, name=name)
-
-    def operation(self, *xs):
-        p = 1
-        for x in xs:
-            if x == 0:
-                p = 0
-                break
-        return int(not bool(min(1, p)))
-
-class Or(Gate):
-    def __init__(self, input, force_value=None, name="OR"):
-        super().__init__(input=input, force_value=force_value, name=name)
-    
-    def operation(self, *xs):
-        s = 0
-        for x in xs:
-            if x == 1:
-                s = 1
-                break
-        return min(1, s)
-
-class Nor(Gate):
-    def __init__(self, input, force_value=None, name="NOR"):
-        super().__init__(input=input, force_value=force_value, name=name)
-    
-    def operation(self, *xs):
-        s = 0
-        for x in xs:
-            if x == 1:
-                s = 1
-                break
-        return int(not bool(min(1, s)))
-    
-class Not(Gate):
-    def __init__(self, input, force_value=None, name="NOT"):
-        assert len(input) == 1, f"Not Gate expects 1 input but {len(input)} were given"
-        super().__init__(input=input, force_value=force_value, name=name)
-    
-    def operation(self, x):
-        return int(not(x))
-    
-class Xor(Gate):
-    def __init__(self, input, force_value=None, name="XOR"):
-        super().__init__(input=input, force_value=force_value, name=name)
-
-    def operation(self, *xs):
-        odd_count = sum(xs) % 2  # Count of '1's, mod 2 to check if odd
-        return odd_count
-
-class Xnor(Gate):
-    def __init__(self, input, force_value=None, name="XNOR"):
-        super().__init__(input=input, force_value=force_value, name=name)
-
-    def operation(self, *xs):
-        odd_count = sum(xs) % 2  # Count of '1's, mod 2 to check if odd
-        return int(not bool(odd_count))
-
-class Input(Gate):
-    """
-    These are leaf nodes of our tree
-    """
-    def __init__(self, col_id, force_value=None):
-        super().__init__(input=col_id, force_value=force_value, name=f'x{col_id}')
-        self.input = col_id
-    
-    def compute_node(self, row):
-        if self.force_value != None:
-            return self.force_value
-        else:
-            return row[self.input]
-        
-    def build_tree(self, tree_list, DG):
-        pass # has no children    
+import graphviz
+from gates import *
 
 class Test:
     def __init__(self, name=None):
         self.name = name
 
-    def setup(self, n):
-        self.num_input = n
-        self.rows = self.create_input_values()
-        x = [Input(i) for i in range(self.num_input)]
-        return x
-    
     def test_function(self):
         """
         
-        ------THIS IS THE WHERE THE USER IS EXPECTED TO INPUT THEIR FUNCTION
+        ------THIS IS THE WHERE THE USER IS EXPECTED TO INPUT THEIR CIRCUIT
         
         """
-        number_of_inputs = 5 # change this line to modify the number of inputs
-        x = self.setup(number_of_inputs)
+        NUMBER_OF_INPUTS = 5 # change this line to modify the number of inputs
+        
+        x = self.setup(NUMBER_OF_INPUTS)
 
         # remember that python is 0-indexed.
-        # so input 1 is x[0], input 2 is x[1], ..., input n is x[n-1]]
+        # so input 1 is x[0], input 2 is x[1], ..., input n is x[n-1]
 
-        # you can either build the gates one step at a time or do everything in one line
+        # you can either build the gates one step at a time, do everything in one line, or anywhere in between.
 
-        # one step at a time (preferable, since it will be easier to debug)
-        and0 = And([x[0], x[1]], name='AND0')
-        and1 = And([x[2], x[3]], name='AND1')
-        not0 = Not([and1], name="NOT0")
-        or0 = Or([not0, and0], name="OR0")
-        or1 = Or([and1, x[4]], name="OR1")
-        z = And([or0, or1], name='Z')
+        # Doing one step at a time (preferable, since it will be easier to debug):
+        
+        and_12 = And([x[0], x[1]])
+        and_34 = And([x[2], x[3]])
+        not_and_34 = Not([and_34])
+        or_0 = Or([and_12, not_and_34])
+        or_1 = Or([and_34, x[4]])
+        final_output = And([or_0, or_1])
+
+        # NOTE: You can do everything in one line (shorter but harder to debug)
+
+        self.get_result(final_output) # NOTE: the program expects final_output to be the variable name of your final output
         """
         ------- END OF USER INPUT
         """
         
-        # one line (short but harder to debug)
-        # z = And([Or([Not([And([x[2], x[3]])]), And([x[0], x[1]])]), Or([And([x[2], x[3]]), x[4]])])
-        self.get_result(z)
+
+        
 
     def draw_graph(self, directed_graph):
         G = directed_graph
@@ -190,11 +66,13 @@ class Test:
 
     def get_result(self, output_node):
         DG = nx.DiGraph()
+        GDG = graphviz.Digraph('Circuit Graph', filename='circuit.gv')
         z = output_node
         tree_list = [z]
-        z.build_tree(tree_list, DG)
 
-        
+        GDG.edge(z.name, 'output')
+        DG.add_edge(z.name, 'output')
+        z.build_tree(tree_list, DG, GDG)
 
         results_rows = []
         for row in self.rows:
@@ -253,8 +131,9 @@ class Test:
 
         print("Test set: ", final_result_set)
         print(f'Test coverage = {100 * len(final_result_set)/len(self.rows):.2f}%')
-
-        self.draw_graph(DG) 
+        
+        GDG.view()
+        # self.draw_graph(DG) 
 
     def create_input_values(self):
         """
@@ -277,7 +156,14 @@ class Test:
                     row[col_idx] = curr_bool
                 curr_bool = int(not bool(curr_bool))  # Toggle between 0 and 1
         return rows
+    
+    def setup(self, n):
+        self.num_input = n
+        self.rows = self.create_input_values()
+        x = [Input(i) for i in range(self.num_input)]
+        return x
 
 
-tester = Test()
-tester.test_function()
+if __name__ == '__main__':
+    tester = Test()
+    tester.test_function()
