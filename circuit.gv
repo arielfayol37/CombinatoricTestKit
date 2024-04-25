@@ -1,0 +1,13 @@
+digraph "Circuit Graph" {
+	OR0 -> Z
+	OR1 -> Z
+	NOT0 -> OR0
+	AND0 -> OR0
+	AND1 -> NOT0
+	x2 -> AND1
+	x3 -> AND1
+	x0 -> AND0
+	x1 -> AND0
+	AND1 -> OR1
+	x4 -> OR1
+}

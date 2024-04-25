@@ -1,13 +1,28 @@
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
-# import graphviz
+import graphviz
 
 class Gate:
+    # All gates should be listed here for graphviz to work properly
+    gate_track = {'AND':0, 'OR':0, 'NOT':0, 'NAND':0, 'NOR':0, 'XOR':0, 'XNOR':0, 'x':0}
+    used_names = []
+    edges = []
     def __init__(self, input, force_value=None, name=None):
-        self.name = name
+        try:
+            self.name = name + str(self.gate_track[name])
+            self.gate_track[name] += 1
+        except:
+            if name in self.used_names:
+                new_name = name + str('#')
+                self.name = new_name
+                self.used_names.append(new_name)
+            else:
+                self.name = name
+                self.used_names.append(name)
         self.input = input
         self.force_value = force_value
+        
 
     def compute_node(self, row):
         """
@@ -22,15 +37,20 @@ class Gate:
                 node_ouputs.append(node.compute_node(row))
             return self.operation(*node_ouputs)
     
-    def build_tree(self, tree_list, DG):
+    def build_tree(self, tree_list, DG, GDG):
         for node in self.input:
             if node not in tree_list:
                 tree_list.append(node)
             DG.add_edge(node, self)
+            if node.name + self.name in self.edges:
+                pass
+            else:
+                self.edges.append(node.name + self.name)
+                GDG.edge(node.name, self.name)
 
         for node in self.input:
             
-            node.build_tree(tree_list, DG)
+            node.build_tree(tree_list, DG, GDG)
     
     def __str__(self) -> str:
         return self.name
@@ -115,7 +135,7 @@ class Input(Gate):
     These are leaf nodes of our tree
     """
     def __init__(self, col_id, force_value=None):
-        super().__init__(input=col_id, force_value=force_value, name=f'x{col_id}')
+        super().__init__(input=col_id, force_value=force_value, name='x')
         self.input = col_id
     
     def compute_node(self, row):
@@ -124,7 +144,7 @@ class Input(Gate):
         else:
             return row[self.input]
         
-    def build_tree(self, tree_list, DG):
+    def build_tree(self, *l):
         pass # has no children    
 
 class Test:
@@ -152,11 +172,11 @@ class Test:
         # you can either build the gates one step at a time or do everything in one line
 
         # one step at a time (preferable, since it will be easier to debug)
-        and0 = And([x[0], x[1]], name='AND0')
-        and1 = And([x[2], x[3]], name='AND1')
-        not0 = Not([and1], name="NOT0")
-        or0 = Or([not0, and0], name="OR0")
-        or1 = Or([and1, x[4]], name="OR1")
+        and0 = And([x[0], x[1]])
+        and1 = And([x[2], x[3]])
+        not0 = Not([and1])
+        or0 = Or([not0, and0])
+        or1 = Or([and1, x[4]])
         z = And([or0, or1], name='Z')
         """
         ------- END OF USER INPUT
@@ -190,9 +210,10 @@ class Test:
 
     def get_result(self, output_node):
         DG = nx.DiGraph()
+        GDG = graphviz.Digraph('Circuit Graph', filename='circuit.gv')
         z = output_node
         tree_list = [z]
-        z.build_tree(tree_list, DG)
+        z.build_tree(tree_list, DG, GDG)
 
         
 
@@ -253,7 +274,8 @@ class Test:
 
         print("Test set: ", final_result_set)
         print(f'Test coverage = {100 * len(final_result_set)/len(self.rows):.2f}%')
-
+        
+        GDG.view()
         self.draw_graph(DG) 
 
     def create_input_values(self):
