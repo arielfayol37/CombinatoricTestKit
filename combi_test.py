@@ -2,188 +2,44 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 import graphviz
-
-class Gate:
-    # All gates should be listed here for graphviz to work properly
-    gate_track = {'AND':0, 'OR':0, 'NOT':0, 'NAND':0, 'NOR':0, 'XOR':0, 'XNOR':0, 'x':0}
-    used_names = []
-    edges = []
-    def __init__(self, input, force_value=None, name=None):
-        try:
-            self.name = name + str(self.gate_track[name])
-            self.gate_track[name] += 1
-        except:
-            if name in self.used_names:
-                new_name = name + str('#')
-                self.name = new_name
-                self.used_names.append(new_name)
-            else:
-                self.name = name
-                self.used_names.append(name)
-        self.input = input
-        self.force_value = force_value
-        
-
-    def compute_node(self, row):
-        """
-        Recursively computes the output at each node by going bottom up.
-        Even though the calls are top down
-        """
-        if self.force_value != None:
-            return self.force_value
-        else:
-            node_ouputs = []
-            for node in self.input:
-                node_ouputs.append(node.compute_node(row))
-            return self.operation(*node_ouputs)
-    
-    def build_tree(self, tree_list, DG, GDG):
-        for node in self.input:
-            if node not in tree_list:
-                tree_list.append(node)
-            DG.add_edge(node, self)
-            if node.name + self.name in self.edges:
-                pass
-            else:
-                self.edges.append(node.name + self.name)
-                GDG.edge(node.name, self.name)
-
-        for node in self.input:
-            
-            node.build_tree(tree_list, DG, GDG)
-    
-    def __str__(self) -> str:
-        return self.name
-    
-    def __repr__(self) -> str:
-        return self.name
-
-class And(Gate):
-    def __init__(self, input, force_value=None, name="AND"):
-        super().__init__(input=input, force_value=force_value, name=name)
-
-    def operation(self, *xs):
-        p = 1
-        for x in xs:
-            if x == 0:
-                p = 0
-                break
-        return min(1, p)
-
-class Nand(Gate):
-    def __init__(self, input, force_value=None, name="NAND"):
-        super().__init__(input=input, force_value=force_value, name=name)
-
-    def operation(self, *xs):
-        p = 1
-        for x in xs:
-            if x == 0:
-                p = 0
-                break
-        return int(not bool(min(1, p)))
-
-class Or(Gate):
-    def __init__(self, input, force_value=None, name="OR"):
-        super().__init__(input=input, force_value=force_value, name=name)
-    
-    def operation(self, *xs):
-        s = 0
-        for x in xs:
-            if x == 1:
-                s = 1
-                break
-        return min(1, s)
-
-class Nor(Gate):
-    def __init__(self, input, force_value=None, name="NOR"):
-        super().__init__(input=input, force_value=force_value, name=name)
-    
-    def operation(self, *xs):
-        s = 0
-        for x in xs:
-            if x == 1:
-                s = 1
-                break
-        return int(not bool(min(1, s)))
-    
-class Not(Gate):
-    def __init__(self, input, force_value=None, name="NOT"):
-        assert len(input) == 1, f"Not Gate expects 1 input but {len(input)} were given"
-        super().__init__(input=input, force_value=force_value, name=name)
-    
-    def operation(self, x):
-        return int(not(x))
-    
-class Xor(Gate):
-    def __init__(self, input, force_value=None, name="XOR"):
-        super().__init__(input=input, force_value=force_value, name=name)
-
-    def operation(self, *xs):
-        odd_count = sum(xs) % 2  # Count of '1's, mod 2 to check if odd
-        return odd_count
-
-class Xnor(Gate):
-    def __init__(self, input, force_value=None, name="XNOR"):
-        super().__init__(input=input, force_value=force_value, name=name)
-
-    def operation(self, *xs):
-        odd_count = sum(xs) % 2  # Count of '1's, mod 2 to check if odd
-        return int(not bool(odd_count))
-
-class Input(Gate):
-    """
-    These are leaf nodes of our tree
-    """
-    def __init__(self, col_id, force_value=None):
-        super().__init__(input=col_id, force_value=force_value, name='x')
-        self.input = col_id
-    
-    def compute_node(self, row):
-        if self.force_value != None:
-            return self.force_value
-        else:
-            return row[self.input]
-        
-    def build_tree(self, *l):
-        pass # has no children    
+from gates import *
 
 class Test:
     def __init__(self, name=None):
         self.name = name
 
-    def setup(self, n):
-        self.num_input = n
-        self.rows = self.create_input_values()
-        x = [Input(i) for i in range(self.num_input)]
-        return x
-    
     def test_function(self):
         """
         
-        ------THIS IS THE WHERE THE USER IS EXPECTED TO INPUT THEIR FUNCTION
+        ------THIS IS THE WHERE THE USER IS EXPECTED TO INPUT THEIR CIRCUIT
         
         """
-        number_of_inputs = 5 # change this line to modify the number of inputs
-        x = self.setup(number_of_inputs)
+        NUMBER_OF_INPUTS = 5 # change this line to modify the number of inputs
+        
+        x = self.setup(NUMBER_OF_INPUTS)
 
         # remember that python is 0-indexed.
-        # so input 1 is x[0], input 2 is x[1], ..., input n is x[n-1]]
+        # so input 1 is x[0], input 2 is x[1], ..., input n is x[n-1]
 
-        # you can either build the gates one step at a time or do everything in one line
+        # you can either build the gates one step at a time, do everything in one line, or anywhere in between.
 
-        # one step at a time (preferable, since it will be easier to debug)
-        and0 = And([x[0], x[1]])
-        and1 = And([x[2], x[3]])
-        not0 = Not([and1])
-        or0 = Or([not0, and0])
-        or1 = Or([and1, x[4]])
-        z = And([or0, or1], name='Z')
+        # Doing one step at a time (preferable, since it will be easier to debug):
+        
+        and_a = And([x[0], x[1]]) # NOTE: the variable names do not matter. 
+        and_b = And([x[2], x[3]]) # if you want to specifiy a name for your gate, then pass it as an argument
+        not_b = Not([and_b])      # For example, the variabl z is a gate, with then name 'Z'
+        or_a = Or([not_b, and_a]) # NOTE: even though the NOT gate only has one input, it should still be passed using a list.
+        or_b = Or([and_b, x[4]])
+        z = And([or_a, or_b], name='Z')
+
+        # NOTE: You can do everything in one line (shorter but harder to debug):
+        # z = And([Or([Not([And([x[2], x[3]])]), And([x[0], x[1]])]), Or([And([x[2], x[3]]), x[4]])])
+
         """
         ------- END OF USER INPUT
         """
         
-        # one line (short but harder to debug)
-        # z = And([Or([Not([And([x[2], x[3]])]), And([x[0], x[1]])]), Or([And([x[2], x[3]]), x[4]])])
+
         self.get_result(z)
 
     def draw_graph(self, directed_graph):
@@ -214,8 +70,6 @@ class Test:
         z = output_node
         tree_list = [z]
         z.build_tree(tree_list, DG, GDG)
-
-        
 
         results_rows = []
         for row in self.rows:
@@ -276,7 +130,7 @@ class Test:
         print(f'Test coverage = {100 * len(final_result_set)/len(self.rows):.2f}%')
         
         GDG.view()
-        self.draw_graph(DG) 
+        # self.draw_graph(DG) 
 
     def create_input_values(self):
         """
@@ -299,7 +153,14 @@ class Test:
                     row[col_idx] = curr_bool
                 curr_bool = int(not bool(curr_bool))  # Toggle between 0 and 1
         return rows
+    
+    def setup(self, n):
+        self.num_input = n
+        self.rows = self.create_input_values()
+        x = [Input(i) for i in range(self.num_input)]
+        return x
 
 
-tester = Test()
-tester.test_function()
+if __name__ == '__main__':
+    tester = Test()
+    tester.test_function()
