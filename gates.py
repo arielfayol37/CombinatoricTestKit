@@ -130,7 +130,7 @@ class Not(Gate):
     
     def operation(self, x):
         """
-        
+        A Not gate just returns the opposite of the truth value of its input
         """
         return int(not(x))
     
@@ -159,7 +159,6 @@ class Input(Gate):
     def __init__(self, col_id, force_value=None):
         assert type(col_id) == int, f"Input class expects an integer input but {type(col_id)} was given"
         super().__init__(input=col_id, force_value=force_value, name='x')
-        self.input = col_id
     
     def compute_node(self, row):
         if self.force_value != None:
@@ -169,3 +168,24 @@ class Input(Gate):
         
     def build_tree(self, *l):
         pass # has no children    
+
+class Output(Gate):
+    """
+    This the root node of three, it expects a list of outputs from the circuit.
+    Its value should never be forced, because it is not part of the circuit.
+    """
+    def __init__(self, input, force_value=None):
+        super().__init__(input=input, force_value=force_value, name='output')       
+
+    def compute_node(self, row):
+        """
+        Recursively computes the output at each node by going bottom up.
+        Even though the calls are top down
+        """
+        if self.force_value != None:
+            raise ValueError("Output node does not expect value to be forced as it is not part of the circuit")
+        else:
+            node_ouputs = []
+            for node in self.input:
+                node_ouputs.append(node.compute_node(row))
+            return node_ouputs

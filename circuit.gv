@@ -1,0 +1,14 @@
+digraph "Circuit Graph" {
+	AND2 -> output
+	OR0 -> AND2
+	OR1 -> AND2
+	AND0 -> OR0
+	NOT0 -> OR0
+	x0 -> AND0
+	x1 -> AND0
+	AND1 -> NOT0
+	x2 -> AND1
+	x3 -> AND1
+	AND1 -> OR1
+	x4 -> OR1
+}
