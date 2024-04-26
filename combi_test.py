@@ -30,7 +30,9 @@ class Test:
         not_and_34 = Not([and_34])
         or_0 = Or([and_12, not_and_34])
         or_1 = Or([and_34, x[4]])
-        final_output = And([or_0, or_1])
+        and_ors = And([or_0, or_1])
+
+        final_output = Output([and_ors])
 
         # NOTE: You can do everything in one line (shorter but harder to debug)
 
@@ -70,9 +72,9 @@ class Test:
         z = output_node
         tree_list = [z]
 
-        GDG.edge(z.name, 'output')
-        DG.add_edge(z.name, 'output')
         z.build_tree(tree_list, DG, GDG)
+        
+        tree_list.pop(0) # remove the output node (which is not really an operation)
 
         results_rows = []
         for row in self.rows:
